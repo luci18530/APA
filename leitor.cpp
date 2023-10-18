@@ -2,45 +2,47 @@
 #include <fstream>
 #include <vector>
 
+using namespace std;
+
 int main() {
     // Declaração de variáveis
-    int n, k, Q, L, r;
-    std::vector<int> d, p;
-    std::vector<std::vector<int>> c;
+    int totalClientes, totalVeiculos, capacidadeVeiculo, entregasMinimas, custoVeiculo;
+    vector<int> demandaClientes, custoTerceirizacao;
+    vector<vector<int>> custoRota;
 
     // Abrindo o arquivo para leitura
-    std::ifstream infile("entrada.txt");
-    if (!infile.is_open()) {
-        std::cerr << "Erro ao abrir o arquivo!" << std::endl;
+    ifstream arquivoEntrada("entrada.txt");
+    if (!arquivoEntrada.is_open()) {
+        cerr << "Erro ao abrir o arquivo!" << endl;
         return 1;
     }
 
     // Leitura das informações básicas
-    infile >> n >> k >> Q >> L >> r;
+    arquivoEntrada >> totalClientes >> totalVeiculos >> capacidadeVeiculo >> entregasMinimas >> custoVeiculo;
 
-    // Leitura do array d
-    d.resize(n);
-    for (int i = 0; i < n; i++) {
-        infile >> d[i];
+    // Leitura da demanda dos clientes
+    demandaClientes.resize(totalClientes);
+    for (int i = 0; i < totalClientes; i++) {
+        arquivoEntrada >> demandaClientes[i];
     }
 
-    // Leitura do array p
-    p.resize(n);
-    for (int i = 0; i < n; i++) {
-        infile >> p[i];
+    // Leitura do custo de terceirização para cada cliente
+    custoTerceirizacao.resize(totalClientes);
+    for (int i = 0; i < totalClientes; i++) {
+        arquivoEntrada >> custoTerceirizacao[i];
     }
 
-    // Leitura da matriz c
-    c.resize(n+1, std::vector<int>(n+1));
-    for (int i = 0; i <= n; i++) {
-        for (int j = 0; j <= n; j++) {
-            infile >> c[i][j];
+    // Leitura da matriz de custo de rota
+    custoRota.resize(totalClientes + 1, vector<int>(totalClientes + 1));
+    for (int i = 0; i <= totalClientes; i++) {
+        for (int j = 0; j <= totalClientes; j++) {
+            arquivoEntrada >> custoRota[i][j];
         }
     }
 
-    infile.close();
+    arquivoEntrada.close();
 
-    // lógica da busca local ou meta-heurística.
+    // TODO: lógica da busca local / meta-heurística
 
     return 0;
 }
