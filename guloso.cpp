@@ -75,61 +75,79 @@ public:
         veiculos.resize(totalVeiculos, {capacidadeVeiculo});
     }
 
-    void roteamentoVeiculos()
+void roteamentoVeiculos()
+{
+    int entregasRealizadas = 0;
+
+    // Itera sobre cada veículo enquanto o número mínimo de entregas não for atingido
+    for (int v = 0; v < totalVeiculos; v++)
     {
-        int entregasRealizadas = 0;
-        // Itera sobre cada veículo enquanto o número mínimo de entregas não for atingido
-        for (int v = 0; v < totalVeiculos; v++)
+        auto &veiculo = veiculos[v];
+        veiculo.rota.push_back(0);
+
+        while (veiculo.capacidadeRestante > 0)
         {
-            auto &veiculo = veiculos[v]; // Obtém a referência para o veículo atual
-            veiculo.rota.push_back(0);   // Adiciona o depósito ao início da rota do veículo
+            int clienteMaisProximo = -1;
+            int custoMinimo = numeric_limits<int>::max();
 
-            while (veiculo.capacidadeRestante > 0)
+            // Itera sobre todos os clientes para encontrar o mais próximo ou para terceirizar
+            for (int i = 0; i < totalClientes; i++)
             {
-                // Variáveis para armazenar o cliente mais próximo e o custo mínimo para chegar até ele
-                int clienteMaisProximo = -1;
-                int custoMinimo = numeric_limits<int>::max();
-
-                // Itera sobre todos os clientes para encontrar o mais próximo
-                for (int i = 0; i < totalClientes; i++)
+                if (!clientes[i].atendido && !clientes[i].terceirizado)
                 {
-                    // Verifica se o cliente atual não foi atendido e se sua demanda pode ser atendida pelo veículo
-                    if (!clientes[i].atendido && clientes[i].demanda <= veiculo.capacidadeRestante)
+                    if (clientes[i].demanda <= veiculo.capacidadeRestante)
                     {
-                        int ultimoCliente = veiculo.rota.back();     // Obtém o último cliente na rota do veículo
-                        int custo = custoRota[ultimoCliente][i + 1]; // Calcula o custo para ir do último cliente até o cliente atual
-
-                        // Se o custo calculado é menor que o custo mínimo atual, atualiza as variáveis
+                        int ultimoCliente = veiculo.rota.back();
+                        int custo = custoRota[ultimoCliente][i + 1];
                         if (custo < custoMinimo)
                         {
                             clienteMaisProximo = i;
                             custoMinimo = custo;
                         }
                     }
+
+                    // Verifica se o número mínimo de entregas já foi atingido antes de considerar a terceirização
+                    if (entregasRealizadas >= entregasMinimas && !clientes[i].atendido)
+                    {
+                        int custoIdaEVolta = custoRota[0][i + 1] + custoRota[i + 1][0];
+                        if (clientes[i].custoTerceirizacao < custoIdaEVolta)
+                        {
+                            
+                            
+                            clientes[i].terceirizado = true;
+                            
+                            custoTotal += clientes[i].custoTerceirizacao;
+                            debug(-1, i, clientes[i].custoTerceirizacao, "Custo de terceirização");
+                        }
+                    }
                 }
-
-                if (clienteMaisProximo == -1)
-                    break;
-
-                // Marca o cliente como atendido, adiciona-o à rota, atualiza a capacidade do veículo e o custo total
-                clientes[clienteMaisProximo].atendido = true;
-                veiculo.rota.push_back(clienteMaisProximo + 1);
-                veiculo.capacidadeRestante -= clientes[clienteMaisProximo].demanda;
-                custoTotal += custoMinimo;
-                entregasRealizadas++;
-                debug(v, clienteMaisProximo, custoMinimo, "Custo do trajeto");
             }
 
-            // Calcula o custo de retorno ao depósito e atualiza o custo total
+            if (clienteMaisProximo == -1)
+                break;
+
+            clientes[clienteMaisProximo].atendido = true;
+            veiculo.rota.push_back(clienteMaisProximo + 1);
+            veiculo.capacidadeRestante -= clientes[clienteMaisProximo].demanda;
+            custoTotal += custoMinimo;
+            entregasRealizadas++;
+            debug(v, clienteMaisProximo, custoMinimo, "Custo do trajeto");
+        }
+
+        if (veiculo.rota.size() > 1) // Verifica se o veículo foi utilizado
+        {
             int ultimoCliente = veiculo.rota.back();
             int custoRetorno = custoRota[ultimoCliente][0];
             custoTotal += custoRetorno;
             debug(v, 0, custoRetorno, "Custo de retorno ao depósito");
 
-            custoTotal += custoVeiculo; // Adiciona o custo fixo do veículo ao custo total
+            custoTotal += custoVeiculo;
             debug(v, 0, custoVeiculo, "Custo fixo do veículo");
         }
     }
+}
+
+
 
     void trocarClientes(int veiculo1, int cliente1, int veiculo2, int cliente2)
     {
@@ -161,6 +179,15 @@ public:
             }
         }
     }
+
+    void limparTerceirizacoesInvalidas() {
+    for (int i = 0; i < totalClientes; i++) {
+        if (clientes[i].atendido && clientes[i].terceirizado) {
+            clientes[i].terceirizado = false;
+            custoTotal -= clientes[i].custoTerceirizacao;
+        }
+    }
+}
 
     void VND()
     {
@@ -195,28 +222,41 @@ public:
         }
     }
 
-    void avaliacaoTerceirizacao()
+void avaliacaoTerceirizacao()
+{
+    for (int i = 0; i < totalClientes; i++)
     {
-        // Itera sobre cada cliente para avaliar a terceirização
-        for (int i = 0; i < totalClientes; i++)
+        if (!clientes[i].atendido && !clientes[i].terceirizado) // Apenas clientes não atendidos e não terceirizados
         {
-            // Se o cliente não foi atendido, verifica se é mais barato terceirizar
-            if (!clientes[i].atendido)
+            int custoIdaEVolta = custoRota[0][i + 1] + custoRota[i + 1][0];
+            if (clientes[i].custoTerceirizacao < custoIdaEVolta)
             {
-
-                // Calcula o custo de ida e volta do depósito para o cliente
-                int custoIdaEVolta = custoRota[0][i + 1] + custoRota[i + 1][0];
-
-                // Se o custo de terceirização é menor que o custo de ida e volta, marca o cliente como terceirizado
-                if (clientes[i].custoTerceirizacao < custoIdaEVolta)
+                // Verificar se o cliente foi atendido por algum veículo
+                for (int v = 0; v < totalVeiculos; v++)
                 {
-                    clientes[i].terceirizado = true;
-                    custoTotal += clientes[i].custoTerceirizacao;
-                    debug(-1, i, clientes[i].custoTerceirizacao, "Custo de terceirização");
+                    for (int j = 0; j < veiculos[v].rota.size(); j++)
+                    {
+                        if (veiculos[v].rota[j] == i + 1)
+                        {
+                            veiculos[v].capacidadeRestante += clientes[i].demanda;
+                            veiculos[v].rota.erase(veiculos[v].rota.begin() + j);
+                            break;
+                        }
+                    }
                 }
+
+                clientes[i].terceirizado = true;
+                clientes[i].atendido = false;
+                custoTotal += clientes[i].custoTerceirizacao;
+                debug(-1, i, clientes[i].custoTerceirizacao, "Custo de terceirização");
             }
         }
     }
+}
+
+
+
+
 
     void exibirResultados()
     {
@@ -263,6 +303,8 @@ public:
     }
 };
 
+
+
 int main()
 {
     ofstream arquivoCustosGuloso("custos_guloso.txt");
@@ -278,7 +320,7 @@ int main()
             "n9k5_B.txt",
             "n9k5_C.txt",
             "n9k5_D.txt",
-            "n14k5_A.txt",
+                        "n14k5_A.txt",
             "n14k5_B.txt",
             "n14k5_C.txt",
             "n14k5_D.txt",
@@ -306,16 +348,18 @@ int main()
             "n199k17_B.txt",
             "n199k17_C.txt",
             "n199k17_D.txt",
+
         };
 
     for (auto &instancia : listaInstancias)
     {
-        CVRP problema(pasta + instancia, false); // O segundo parâmetro indica se o modo debug está ativado
+        CVRP problema(pasta + instancia, true); // O segundo parâmetro indica se o modo debug está ativado
         auto inicio_guloso = high_resolution_clock::now();
         problema.roteamentoVeiculos();
         auto fim_guloso = high_resolution_clock::now();
 
         problema.avaliacaoTerceirizacao();
+        problema.limparTerceirizacoesInvalidas();
         problema.exibirResultados();
         arquivoCustosGuloso << problema.getCustoTotal() << endl;
 
@@ -336,6 +380,7 @@ int main()
         arquivoTempoExecGuloso << tempo_exec_guloso.count() << endl;
         arquivoTempoExecVND << tempo_exec_vnd.count() << endl;
     }
+
     arquivoCustosGuloso.close();
     arquivoCustosVND.close();
     return 0;
