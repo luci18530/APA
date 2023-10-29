@@ -3,6 +3,9 @@
 #include <limits>
 #include <fstream>
 #include <chrono>
+#include <filesystem>
+
+
 
 using namespace std;
 using namespace std::chrono;
@@ -187,7 +190,68 @@ void roteamentoVeiculos()
             custoTotal -= clientes[i].custoTerceirizacao;
         }
     }
+    }
+
+    void gerarArquivoSaida(const string &nomeArquivo) {
+    ofstream arquivoSaida(nomeArquivo);
+    if (!arquivoSaida.is_open()) {
+        cerr << "Erro ao abrir o arquivo de saída." << endl;
+        return;
+    }
+
+    int custoRoteamento = 0;
+    int custoVeiculos = 0;
+    int custoTerceirizacao = 0;
+
+    for (const auto &veiculo : veiculos) {
+        if (veiculo.rota.size() > 1) {
+            custoVeiculos += custoVeiculo;
+            for (size_t i = 0; i < veiculo.rota.size() - 1; ++i) {
+                custoRoteamento += custoRota[veiculo.rota[i]][veiculo.rota[i+1]];
+            }
+            custoRoteamento += custoRota[veiculo.rota.back()][0];
+        }
+    }
+
+    for (const auto &cliente : clientes) {
+        if (cliente.terceirizado) {
+            custoTerceirizacao += cliente.custoTerceirizacao;
+        }
+    }
+
+    arquivoSaida << custoTotal << endl << endl;
+    arquivoSaida << custoRoteamento << endl << endl;
+    arquivoSaida << custoVeiculos << endl << endl;
+    arquivoSaida << custoTerceirizacao << endl << endl;
+
+    bool primeiro = true;
+    for (const auto &cliente : clientes) {
+        if (cliente.terceirizado) {
+            if (!primeiro) {
+                arquivoSaida << " ";
+            }
+            arquivoSaida << (&cliente - &clientes[0] + 1);
+            primeiro = false;
+        }
+    }
+    arquivoSaida << endl << endl;
+
+    arquivoSaida << veiculos.size() << endl << endl;
+    for (const auto &veiculo : veiculos) {
+        if (veiculo.rota.size() > 1) {
+            for (int cliente : veiculo.rota) {
+                arquivoSaida << cliente << " ";
+            }
+            arquivoSaida << endl;
+        } else {
+            arquivoSaida << "0 " << endl;
+        }
+    }
+
+    arquivoSaida.close();
 }
+
+
 
     void VND()
     {
@@ -320,7 +384,7 @@ int main()
             "n9k5_B.txt",
             "n9k5_C.txt",
             "n9k5_D.txt",
-                        "n14k5_A.txt",
+            "n14k5_A.txt",
             "n14k5_B.txt",
             "n14k5_C.txt",
             "n14k5_D.txt",
@@ -348,12 +412,12 @@ int main()
             "n199k17_B.txt",
             "n199k17_C.txt",
             "n199k17_D.txt",
-
+            
         };
 
     for (auto &instancia : listaInstancias)
     {
-        CVRP problema(pasta + instancia, true); // O segundo parâmetro indica se o modo debug está ativado
+        CVRP problema(pasta + instancia, false); // O segundo parâmetro indica se o modo debug está ativado
         auto inicio_guloso = high_resolution_clock::now();
         problema.roteamentoVeiculos();
         auto fim_guloso = high_resolution_clock::now();
@@ -361,6 +425,10 @@ int main()
         problema.avaliacaoTerceirizacao();
         problema.limparTerceirizacoesInvalidas();
         problema.exibirResultados();
+        
+        
+        string stringsaida = "saida_" + instancia;
+        problema.gerarArquivoSaida(stringsaida);
         arquivoCustosGuloso << problema.getCustoTotal() << endl;
 
         // APLICANDO VND
@@ -368,9 +436,9 @@ int main()
         problema.VND();
         auto fim_vnd = high_resolution_clock::now();
 
-        cout << "----------" << endl;
+        cout << "\n----------" << endl;
         cout << "ROTEAMENTO APÓS O VND: " << endl;
-        cout << "----------" << endl;
+        cout << "----------\n" << endl;
         problema.exibirResultados();
         arquivoCustosVND << problema.getCustoTotal() << endl;
 
@@ -383,5 +451,7 @@ int main()
 
     arquivoCustosGuloso.close();
     arquivoCustosVND.close();
+    arquivoTempoExecGuloso.close();
+    arquivoTempoExecVND.close();
     return 0;
 }
