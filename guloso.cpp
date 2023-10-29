@@ -2,8 +2,10 @@
 #include <vector>
 #include <limits>
 #include <fstream>
+#include <chrono>
 
 using namespace std;
+using namespace std::chrono;
 
 struct Cliente
 {
@@ -162,10 +164,9 @@ public:
     {
         int k = 1;
         while (k <= 2)
-        { // Duas vizinhanças: troca de clientes e terceirização
+        {
             if (k == 1)
             {
-                // Vizinhança 1: Troca de clientes entre veículos
                 for (int v1 = 0; v1 < totalVeiculos; v1++)
                 {
                     for (int c1 = 1; c1 < veiculos[v1].rota.size() - 1; c1++)
@@ -264,6 +265,8 @@ int main()
 {
     ofstream arquivoCustosGuloso("custos_guloso.txt");
     ofstream arquivoCustosVND("custos_vnd.txt");
+    ofstream arquivoTempoExecGuloso("tempo_exec_guloso.txt");
+    ofstream arquivoTempoExecVND("tempo_exec_vnd.txt");
 
     string pasta = "instancias/";
 
@@ -306,17 +309,30 @@ int main()
     for (auto &instancia : listaInstancias)
     {
         CVRP problema(pasta + instancia);
+        auto inicio_guloso = high_resolution_clock::now();
         problema.roteamentoVeiculos();
+        auto fim_guloso = high_resolution_clock::now();
+
         problema.avaliacaoTerceirizacao();
         problema.exibirResultados();
         arquivoCustosGuloso << problema.getCustoTotal() << endl;
+
         // APLICANDO VND
+        auto inicio_vnd = high_resolution_clock::now();
         problema.VND();
+        auto fim_vnd = high_resolution_clock::now();
+
         cout << "----------" << endl;
         cout << "ROTEAMENTO APÓS O VND: " << endl;
         cout << "----------" << endl;
         problema.exibirResultados();
+
+        auto tempo_exec_guloso = duration_cast<microseconds>(fim_guloso - inicio_guloso);
+        auto tempo_exec_vnd = duration_cast<microseconds>(fim_vnd - inicio_vnd);
+
         arquivoCustosVND << problema.getCustoTotal() << endl;
+        arquivoTempoExecGuloso << tempo_exec_guloso.count() << endl;
+        arquivoTempoExecVND << tempo_exec_vnd.count() << endl;
     }
     arquivoCustosGuloso.close();
     arquivoCustosVND.close();
