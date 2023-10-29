@@ -18,11 +18,10 @@ struct Veiculo {
 };
 
 class CVRP {
-private:
+public:
   vector<Cliente> clientes;
   vector<Veiculo> veiculos;
-  vector<vector<int>>
-      custoRota; // Matriz de custos entre clientes e entre cliente e depósito
+  vector<vector<int>> custoRota; // Matriz de custos entre clientes e entre cliente e depósito
   int totalClientes, totalVeiculos, capacidadeVeiculo, entregasMinimas,
       custoVeiculo, custoTotal = 0;
 
@@ -35,7 +34,6 @@ private:
     cout << "Custo Total Cumulativo = " << custoTotal << endl;
   }
 
-public:
   CVRP(const string &nomeArquivo) {
     // Leitura do arquivo de entrada
     ifstream arquivo(nomeArquivo);
@@ -130,143 +128,140 @@ public:
     }
   }
 
-  void avaliacaoTerceirizacao() {
-    // Itera sobre cada cliente para avaliar a terceirização
-    for (int i = 0; i < totalClientes; i++) {
-      // Se o cliente não foi atendido, verifica se é mais barato terceirizar
-      if (!clientes[i].atendido) {
-
-        // Calcula o custo de ida e volta do depósito para o cliente
-        int custoIdaEVolta = custoRota[0][i + 1] + custoRota[i + 1][0];
-
-        // Se o custo de terceirização é menor que o custo de ida e volta, marca
-        // o cliente como terceirizado
-        if (clientes[i].custoTerceirizacao < custoIdaEVolta) {
-          clientes[i].terceirizado = true;
-          custoTotal += clientes[i].custoTerceirizacao;
-          debug(-1, i, clientes[i].custoTerceirizacao,
-                "Custo de terceirização");
-        }
-      }
-    }
-  }
-
-  int CalcularCustoTotal() {
-    int custo = 0;
-
-    // Calcular o custo total das rotas dos veículos
-    for (int v = 0; v < totalVeiculos; v++) {
-      const vector<int> &rota = veiculos[v].rota;
-      for (int i = 1; i < rota.size(); i++) {
-        int cliente1 = rota[i - 1];
-        int cliente2 = rota[i];
-        custo += custoRota[cliente1][cliente2];
-      }
-    }
-
-    return custo;
-  }
-
-  void Rota_unica(int veiculoIndex) {
-    Veiculo veiculo = veiculos[veiculoIndex];
-    vector<int> melhorRota = veiculo.rota;
-    int custoMelhorRota = CalcularCustoTotal();
-
-    for (int i = 1; i < veiculo.rota.size() - 1; i++) {
-      for (int j = i + 1; j < veiculo.rota.size(); j++) {
-        vector<int> novaRota = veiculo.rota;
-        swap(novaRota[i], novaRota[j]);
-        veiculos[veiculoIndex].rota = novaRota;
-
-        int custoNovaRota = CalcularCustoTotal();
-
-        if (custoNovaRota < custoMelhorRota) {
-          melhorRota = novaRota;
-          custoMelhorRota = custoNovaRota;
-        }
-      }
-    }
-    veiculos[veiculoIndex].rota = melhorRota;
-  }
-
-  void rotas_multiplas() {
-    int custoMelhorSolucao = CalcularCustoTotal();
-    vector<vector<int>> melhorRotaVeiculos(totalVeiculos);
-
-    for (int rota1 = 0; rota1 < totalVeiculos; rota1++) {
-      for (int rota2 = rota1 + 1; rota2 < totalVeiculos; rota2++) {
-        for (int i = 1; i < veiculos[rota1].rota.size() - 1; i++) {
-          for (int j = 1; j < veiculos[rota2].rota.size() - 1; j++) {
-            vector<int> novaRota1 = veiculos[rota1].rota;
-            vector<int> novaRota2 = veiculos[rota2].rota;
-            swap(novaRota1[i], novaRota2[j]);
-
-            veiculos[rota1].rota = novaRota1;
-            veiculos[rota2].rota = novaRota2;
-
-            int custoNovaSolucao = CalcularCustoTotal();
-
-            if (custoNovaSolucao < custoMelhorSolucao) {
-              custoMelhorSolucao = custoNovaSolucao;
-              melhorRotaVeiculos[rota1] = novaRota1;
-              melhorRotaVeiculos[rota2] = novaRota2;
-            }
-
-            veiculos[rota1].rota = novaRota1;
-            veiculos[rota2].rota = novaRota2;
+  void avaliacaoTerceirizacao()
+  {
+      for (int i = 0; i < totalClientes; i++)
+      {
+          if (!clientes[i].atendido && !clientes[i].terceirizado) // Apenas clientes não atendidos e não terceirizados
+          {
+              int custoIdaEVolta = custoRota[0][i + 1] + custoRota[i + 1][0];
+              if (clientes[i].custoTerceirizacao < custoIdaEVolta)
+              {
+                  clientes[i].terceirizado = true;
+                  clientes[i].atendido = true;
+                  custoTotal += clientes[i].custoTerceirizacao;
+                  debug(-1, i, clientes[i].custoTerceirizacao, "Custo de terceirização");
+              }
           }
-        }
       }
-    }
+  }
 
-    for (int i = 0; i < totalVeiculos; i++) {
-      veiculos[i].rota = melhorRotaVeiculos[i];
+  int exibirResultados() {
+      cout << "Custo total: " << custoTotal << endl;
+      for (int i = 0; i < totalVeiculos; i++) {
+          cout << "Rota do veiculo " << i + 1 << ": Depósito ";
+          for (int cliente : veiculos[i].rota) {
+              if (cliente == 0)
+                  continue;
+              cout << "-> Cliente " << cliente << " ";
+          }
+          if (veiculos[i].rota.size() == 1) {
+              cout << "(veículo não utilizado)";
+          }
+          cout << "-> Depósito" << endl;
+      }
+
+      cout << "Clientes terceirizados: ";
+      bool primeiro = true;
+      for (int i = 0; i < totalClientes; i++) {
+          if (clientes[i].terceirizado) {
+              if (!primeiro) {
+                  cout << ", ";
+              }
+              cout << "Cliente " << i + 1;
+              primeiro = false;
+          }
+      }
+      if (primeiro) {
+          cout << "Nenhum cliente foi terceirizado.";
+      }
+      cout << endl;
+      cout << "custo total no exibir " << custoTotal << endl;
+      return custoTotal;
+  }
+
+  int calcularCustoRota(const vector<int> &rota) {
+      int custo = 0;
+      for (int i = 0; i < rota.size() - 1; i++) {
+          custo += custoRota[rota[i]][rota[i + 1]];
+      }
+      return custo;
+  }
+  void vizinhancaRotaUnica() {
+    for (int veiculoIdx = 0; veiculoIdx < totalVeiculos; veiculoIdx++) {
+        Veiculo &veiculo = veiculos[veiculoIdx];
+        vector<int> &rota = veiculo.rota;
+        int custoAntigo = calcularCustoRota(rota); // Custo da rota atual
+
+        for (int i = 1; i < rota.size() - 1; i++) {
+            for (int j = i + 1; j < rota.size(); j++) {
+                swap(rota[i], rota[j]);
+
+                // Avalie o custo da nova rota após a troca
+                int novoCusto = calcularCustoRota(rota);
+
+                // Se o novo custo for menor, mantenha a troca; caso contrário, desfaça a troca
+                if (novoCusto < custoAntigo) {
+                    custoAntigo = novoCusto; // Atualiza o custo antigo
+                } else {
+                    swap(rota[i], rota[j]);
+                }
+            }
+        }
     }
   }
 
-  void exibirResultados() {
-    cout << "Custo total: " << custoTotal << endl;
-    for (int i = 0; i < totalVeiculos; i++) {
-      cout << "Rota do veiculo " << i + 1 << ": Depósito ";
-      for (int cliente : veiculos[i].rota) {
-        if (cliente == 0)
-          continue;
-        cout << "-> Cliente " << cliente << " ";
+void buscaVizinhancaMultiplaRotas() {
+          int custoOriginal = custoTotal; // Custo original antes da busca na vizinhança
+  
+          for (int veiculo1 = 0; veiculo1 < totalVeiculos; veiculo1++) {
+              for (int veiculo2 = veiculo1 + 1; veiculo2 < totalVeiculos; veiculo2++) {
+                  Veiculo& v1 = veiculos[veiculo1];
+                  Veiculo& v2 = veiculos[veiculo2];
+  
+                  for (int i = 1; i < v1.rota.size(); i++) {
+                      for (int j = 1; j < v2.rota.size(); j++) {
+                          // Realiza a troca dos clientes entre as rotas v1 e v2
+                          int cliente1 = v1.rota[i];
+                          int cliente2 = v2.rota[j];
+                          int custoAntes = custoRota[v1.rota[i - 1]][cliente1] + custoRota[cliente1][v1.rota[i + 1]] +
+                              custoRota[v2.rota[j - 1]][cliente2] + custoRota[cliente2][v2.rota[j + 1]];
+                          int custoDepois = custoRota[v1.rota[i - 1]][cliente2] + custoRota[cliente2][v1.rota[i + 1]] +
+                              custoRota[v2.rota[j - 1]][cliente1] + custoRota[cliente1][v2.rota[j + 1]];
+  
+                          // Calcula o custo total depois da troca
+                          int custoNovo = custoTotal - custoAntes + custoDepois;
+  
+                          if (custoNovo < custoTotal) {
+                              // Realiza a troca se o custo diminuir
+                              swap(v1.rota[i], v2.rota[j]);
+                              custoTotal = custoNovo;
+                          }
+                      }
+                  }
+              }
+          }
+        cout << "Cheguei até aqui" << endl;
+  
+          // Verifica se houve melhoria no custo total
+          if (custoTotal < custoOriginal) {
+             cout << "entro aqui" << endl;
+              buscaVizinhancaMultiplaRotas();
+          }
       }
-      if (veiculos[i].rota.size() == 1) {
-        cout << "(veículo não utilizado)";
-      }
-      cout << "-> Depósito" << endl;
-    }
-
-    cout << "Clientes terceirizados: ";
-    bool primeiro = true;
-    for (int i = 0; i < totalClientes; i++) {
-      if (clientes[i].terceirizado) {
-        if (!primeiro) {
-          cout << ", ";
-        }
-        cout << "Cliente " << i + 1;
-        primeiro = false;
-      }
-    }
-    if (primeiro) {
-      cout << "Nenhum cliente foi terceirizado.";
-    }
-    cout << endl;
-  }
 };
 
 int main() {
-  CVRP problema("Entrada.txt");
-  problema.roteamentoVeiculos();     // Roteamento inicial
-  problema.avaliacaoTerceirizacao(); // Avaliação de terceirização
-  problema.exibirResultados();
-  cout << "--------------------------------------------------------------------"
-          "------------";
-  problema.Rota_unica(0); // Chamando Rota_unica para o primeiro veículo (índice 0)
-  problema.rotas_multiplas();
-  problema.avaliacaoTerceirizacao(); // Chamando rotas_multiplas
-  problema.exibirResultados();       // Exibindo os resultados
-  return 0;
+    CVRP cvrp("Entrada.txt");
+
+    cvrp.roteamentoVeiculos();
+    cvrp.avaliacaoTerceirizacao();
+
+    cout << "Custo total antex o roteamento inicial: " << cvrp.exibirResultados() << endl;
+    cout << "-----------------------------------------" << endl;
+    cvrp.vizinhancaRotaUnica();
+  
+    cout << "Custo total após a otimização com a função de troca: " << cvrp.exibirResultados() << endl;
+
+    return 0;
 }
