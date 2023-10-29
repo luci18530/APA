@@ -26,17 +26,19 @@ private:
     vector<Veiculo> veiculos;
     vector<vector<int>> custoRota; // Matriz de custos entre clientes e entre cliente e depósito
     int totalClientes, totalVeiculos, capacidadeVeiculo, entregasMinimas, custoVeiculo, custoTotal = 0;
+    bool debugMode;
 
-    void debug(int veiculoAtual, int clienteAtual, int custoAdicionado, const string &tipoCusto)
-    {
-        cout << "DEBUG: " << tipoCusto << endl;
-        cout << "Veículo " << veiculoAtual + 1 << ", Cliente " << clienteAtual + 1 << ": ";
-        cout << "Custo Adicionado = " << custoAdicionado << ", ";
-        cout << "Custo Total Cumulativo = " << custoTotal << endl;
+    void debug(int veiculoAtual, int clienteAtual, int custoAdicionado, const string& tipoCusto) {
+        if (debugMode) {
+            cout << "DEBUG: " << tipoCusto << endl;
+            cout << "Veículo " << veiculoAtual + 1 << ", Cliente " << clienteAtual + 1 << ": ";
+            cout << "Custo Adicionado = " << custoAdicionado << ", ";
+            cout << "Custo Total Cumulativo = " << custoTotal << endl;
+        }
     }
 
 public:
-    CVRP(const string &nomeArquivo)
+    CVRP(const string &nomeArquivo, bool debugMode = false) : debugMode(debugMode)
     {
         // Leitura do arquivo de entrada
         ifstream arquivo(nomeArquivo);
@@ -305,7 +307,7 @@ int main()
 
     for (auto &instancia : listaInstancias)
     {
-        CVRP problema(pasta + instancia);
+        CVRP problema(pasta + instancia, false); // O segundo parâmetro indica se o modo debug está ativado
         problema.roteamentoVeiculos();
         problema.avaliacaoTerceirizacao();
         problema.exibirResultados();
