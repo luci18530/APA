@@ -427,14 +427,16 @@ int main()
         problema.exibirResultados();
         
         
-        string stringsaida = "saida_" + instancia;
-        problema.gerarArquivoSaida(stringsaida);
+        string stringsaida = "guloso_saida_" + instancia;
+        problema.gerarArquivoSaida("saidas/" + stringsaida + ".txt");
         arquivoCustosGuloso << problema.getCustoTotal() << endl;
 
         // APLICANDO VND
         auto inicio_vnd = high_resolution_clock::now();
         problema.VND();
         auto fim_vnd = high_resolution_clock::now();
+        stringsaida = "vnd_saida_" + instancia;
+        problema.gerarArquivoSaida("saidas/" + stringsaida + ".txt");
 
         cout << "\n----------" << endl;
         cout << "ROTEAMENTO APÓS O VND: " << endl;
