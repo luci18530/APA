@@ -1,15 +1,17 @@
 #include <iostream>
 #include <vector>
-#include <vector>
 #include <limits>
-#include <fstream>
-#include <chrono>
 #include <fstream>
 #include <chrono>
 
 using namespace std;
 using namespace std::chrono;
-using namespace std::chrono;
+const string CUSTOS_GULOSO = "custos/custos_guloso.txt";
+const string CUSTOS_VND = "custos/custos_vnd.txt";
+const string TEMPO_EXEC_GULOSO = "tempos_de_execucao/tempo_exec_guloso.txt";
+const string TEMPO_EXEC_VND = "tempos_de_execucao/tempo_exec_vnd.txt";
+const string PASTA_INSTANCIAS = "instancias/";
+const string PASTA_SAIDAS = "arquivos_saidas/";
 
 struct Cliente
 {
@@ -481,14 +483,42 @@ public:
     }
 };
 
+void aplicarAlgoritmoGuloso(CVRP &problema, ofstream &arquivoCustos, ofstream &arquivoTempoExec) {
+    auto inicio = high_resolution_clock::now();
+    problema.roteamentoVeiculos();
+    auto fim = high_resolution_clock::now();
+    problema.avaliacaoTerceirizacao();
+    problema.exibirResultados();
+    arquivoCustos << problema.custoTotal << endl;
+    auto tempo_exec = duration_cast<microseconds>(fim - inicio);
+    arquivoTempoExec << tempo_exec.count() << endl;
+}
+
+void aplicarVND(CVRP &problema, ofstream &arquivoCustos, ofstream &arquivoTempoExec) {
+    auto inicio = high_resolution_clock::now();
+    problema.VND();
+    auto fim = high_resolution_clock::now();
+    
+    cout << "----------" << endl
+         << "ROTEAMENTO APÓS O VND: " << endl
+         << "----------" << endl;
+         
+    problema.exibirResultados();
+    arquivoCustos << problema.custoTotal << endl;
+    
+    auto tempo_exec = duration_cast<microseconds>(fim - inicio);
+    arquivoTempoExec << tempo_exec.count() << endl;
+}
+
+
 int main()
 {
-    ofstream arquivoCustosGuloso("custos/custos_guloso.txt");
-    ofstream arquivoCustosVND("custos/custos_vnd.txt");
-    ofstream arquivoTempoExecGuloso("tempos_de_execucao/tempo_exec_guloso.txt");
-    ofstream arquivoTempoExecVND("tempos_de_execucao/tempo_exec_vnd.txt");
+    ofstream arquivoCustosGuloso(CUSTOS_GULOSO);
+    ofstream arquivoCustosVND(CUSTOS_VND);
+    ofstream arquivoTempoExecGuloso(TEMPO_EXEC_GULOSO);
+    ofstream arquivoTempoExecVND(TEMPO_EXEC_VND);
 
-    string pasta_instancias = "instancias/";
+    
 
     vector<string> listaInstancias =
         {
@@ -524,49 +554,25 @@ int main()
             "n199k17_B.txt",
             "n199k17_C.txt",
             "n199k17_D.txt",
-
         };
 
-    for (auto &instancia : listaInstancias)
-    {
-        CVRP problema(pasta_instancias + instancia);
+    for (auto &instancia : listaInstancias) {
+        CVRP problema(PASTA_INSTANCIAS + instancia);
 
-        // APLICANDO ALGORITMO GULOSO
-        auto inicio_guloso = high_resolution_clock::now();
-        problema.roteamentoVeiculos();
-        auto fim_guloso = high_resolution_clock::now();
+        // Aplicando Algoritmo Guloso
+        aplicarAlgoritmoGuloso(problema, arquivoCustosGuloso, arquivoTempoExecGuloso);
 
-        problema.avaliacaoTerceirizacao();
-        problema.exibirResultados();
+        // Gerando arquivo de saída para o Guloso
+        string stringsaidaGuloso = "guloso_saida_" + instancia;
+        problema.gerarArquivoSaida(PASTA_SAIDAS + stringsaidaGuloso + ".txt");
 
-        string stringsaida = "guloso_saida_" + instancia;
-        problema.gerarArquivoSaida("arquivos_saidas/" + stringsaida + ".txt");
+        // Aplicando VND
+        aplicarVND(problema, arquivoCustosVND, arquivoTempoExecVND);
 
-        arquivoCustosGuloso << problema.custoTotal << endl;
-
-        // APLICANDO VND
-        auto inicio_vnd = high_resolution_clock::now();
-        problema.VND();
-        auto fim_vnd = high_resolution_clock::now();
-        stringsaida = "vnd_saida_" + instancia;
-        problema.gerarArquivoSaida("arquivos_saidas/" + stringsaida + ".txt");
-
-        cout << "----------" << endl
-             << "ROTEAMENTO APÓS O VND: " << endl
-             << "----------" << endl;
-
-        problema.exibirResultados();
-        arquivoCustosVND << problema.custoTotal << endl;
-
-        auto tempo_exec_guloso = duration_cast<microseconds>(fim_guloso - inicio_guloso);
-        auto tempo_exec_vnd = duration_cast<microseconds>(fim_vnd - inicio_vnd);
-
-        // Escreve os tempos de execução para cada instancia
-        arquivoTempoExecGuloso << tempo_exec_guloso.count() << endl;
-        arquivoTempoExecVND << tempo_exec_vnd.count() << endl;
+        // Gerando arquivo de saída para o VND
+        string stringsaidaVND = "vnd_saida_" + instancia;
+        problema.gerarArquivoSaida(PASTA_SAIDAS + stringsaidaVND + ".txt");
     }
 
-    arquivoCustosGuloso.close();
-    arquivoCustosVND.close();
     return 0;
 }
