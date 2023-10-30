@@ -318,32 +318,8 @@ public:
         }
     }
 
-    // void VND()
-    // {
-    //   int custoAntesVND = custoTotal;
-    //   int custoDepoisVND;
-    //   int counter = 0;
-    //   do
-    //   {
-    //     custoDepoisVND = custoTotal;
-    //     RotaUnica();
-    //     avaliacaoTerceirizacao();
-    //     RotasMultiplas();
-    //     avaliacaoTerceirizacao();
-    //   } while (custoTotal < custoDepoisVND);
-
-    //   if (custoTotal < custoAntesVND)
-    //   {
-    //     cout << "Melhoria com VND! Novo custo: " << custoTotal << endl;
-    //   }
-    //   else
-    //   {
-    //     cout << "Sem melhoria com VND. Custo: " << custoTotal << endl;
-    //   }
-    // }
-
     // Verifica se a troca respeita a capacidade dos veículos
-    bool isFeasible(Veiculo &veiculo, vector<int> &novaRota, int i, int j)
+    bool isTrocaValida(Veiculo &veiculo, vector<int> &novaRota, int i, int j)
     {
         int n = novaRota.size();
         int capacidadeRestante = veiculo.capacidadeRestante;
@@ -382,16 +358,13 @@ public:
             for (int j = i + 1; j < n - 1; j++)
             {
                 vector<int> novaRota = rota;
+                troca(novaRota, i, j);
 
-                // Aplica a troca
-                troca(veiculo.rota, i, j);
-
-                if (isFeasible(veiculo, novaRota, i, j))
+                if (isTrocaValida(veiculo, novaRota, i, j))
                 {
                     // Calcula o custo da nova rota
                     int custoNovo = CalculoTotalTercerizacao();
 
-                    // Se a nova rota é melhor, atualiza a rota original
                     if (custoNovo < custoTotal)
                     {
                         rota = novaRota;
@@ -591,6 +564,7 @@ int main()
         auto tempo_exec_guloso = duration_cast<microseconds>(fim_guloso - inicio_guloso);
         auto tempo_exec_vnd = duration_cast<microseconds>(fim_vnd - inicio_vnd);
 
+        // Escrever os tempos de execução para cada instancia
         arquivoTempoExecGuloso << tempo_exec_guloso.count() << endl;
         arquivoTempoExecVND << tempo_exec_vnd.count() << endl;
     }
