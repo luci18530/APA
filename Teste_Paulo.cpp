@@ -1,10 +1,14 @@
 #include <iostream>
 #include <vector>
+#include <vector>
 #include <limits>
+#include <fstream>
+#include <chrono>
 #include <fstream>
 #include <chrono>
 
 using namespace std;
+using namespace std::chrono;
 using namespace std::chrono;
 
 struct Cliente
@@ -157,6 +161,7 @@ public:
         if (clientes[i].custoTerceirizacao < custoIdaEVolta)
         {
           clientes[i].terceirizado = true;
+          clientes[i].atendido = true;
           clientes[i].atendido = true;
           custoTotal += clientes[i].custoTerceirizacao;
           debug(-1, i, clientes[i].custoTerceirizacao,
