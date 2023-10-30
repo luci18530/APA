@@ -162,7 +162,7 @@ public:
                 {
                     clientes[i].terceirizado = true;
                     clientes[i].atendido = true;
-                    clientes[i].atendido = true;
+                    
                     custoTotal += clientes[i].custoTerceirizacao;
                     debug(-1, i, clientes[i].custoTerceirizacao,
                           "Custo de terceirização");
