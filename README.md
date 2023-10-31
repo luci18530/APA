@@ -1,4 +1,5 @@
 # Trabalho de APA
+
 ## Luciano Pereira, Paulo Marcelo Ribeiro, Pedro Lucas da Silva
 
 Pastas:<br>
@@ -11,4 +12,4 @@ Pastas:<br>
 Arquivos do trabalho:<br>
 &emsp;main.cpp ----> programa principal<br>
 &emsp;tabela_resultados.xlsx ----> planilha contendo os resultados que foram pedidos no documento, com o cálculo de GAP<br>
-
+&emsp;relatorio ----> PDF contendo os resultados computacionais e os nomes dos integrantes do grupo<br>
